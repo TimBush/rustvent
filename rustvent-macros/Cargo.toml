@@ -1,0 +1,15 @@
+[package]
+name = "rustvent-macros"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+proc-macro = true
+crate-type = ["proc-macro"]
+
+[dependencies]
+proc-macro2 = "1.0.69"
+syn = { version = "2.0.39", features = ["full"]}
+quote = "1.0.33"
+trybuild = "1.0.85"
+cargo-expand = "1.0.74"
