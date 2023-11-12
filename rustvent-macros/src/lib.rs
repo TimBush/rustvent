@@ -41,8 +41,8 @@ pub fn event_macro_derive(item: TokenStream) -> TokenStream {
             impl_func_stream.extend::<TokenStream2>(
                 quote! {
                     fn #fname(&self) {
-                        for sub in self.#name.subscribers.iter() {
-                            sub();
+                        for subscriber in self.#name.subscribers.iter() {
+                            subscriber.update();
                         }
                     }
                 }
@@ -61,7 +61,6 @@ pub fn event_macro_derive(item: TokenStream) -> TokenStream {
             }
         };
 
-        
         quote! {
             #trait_def
             #impl_def
