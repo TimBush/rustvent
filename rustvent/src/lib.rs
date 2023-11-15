@@ -109,11 +109,11 @@ pub mod events {
         }
     }
     
-    impl SubAssign<Rc<dyn Subscriber>> for Event {
-        fn sub_assign(&mut self, rhs: Rc<dyn Subscriber>) {
+    impl SubAssign<&Rc<dyn Subscriber>> for Event {
+        fn sub_assign(&mut self, rhs: &Rc<dyn Subscriber>) {
             let index = self.subscribers
             .iter()
-            .position(|subscriber| ptr::eq(Rc::as_ptr(subscriber), Rc::as_ptr(&rhs)))
+            .position(|subscriber| ptr::eq(Rc::as_ptr(subscriber), Rc::as_ptr(rhs)))
             .expect("The provided 'rhs' argument could not be found in the list of subscribers.");
             
             self.subscribers.swap_remove(index);
@@ -134,6 +134,8 @@ pub mod events {
 
 #[cfg(test)]
 mod tests {
+    use std::rc;
+
     use super::*;
     use crate::events::Event;
 
@@ -177,10 +179,21 @@ mod tests {
         some_event += rc_some_sub.clone();
         some_event += rc_another_sub.clone();
 
-        some_event -= rc_some_sub;
+        some_event -= &rc_some_sub;
   
         assert_eq!(some_event.get_subscribers().len(), 1);
         assert!(Rc::ptr_eq(&some_event.get_subscribers()[0], &rc_another_sub))
+    }
+
+    #[test]
+    fn event_unsubscribe_is_successful() {
+        let mut some_event = Event::default();
+        let rc_some_sub: Rc<dyn Subscriber> = Rc::new(SomeSubscriber {});
+
+        some_event += rc_some_sub.clone();
+        some_event.unsubscribe(&rc_some_sub);
+
+        assert!(some_event.get_subscribers().is_empty());
     }
 
     #[test]
@@ -189,7 +202,7 @@ mod tests {
         let mut some_event = Event::default();
         let rc_some_sub: Rc<dyn Subscriber> = Rc::new(SomeSubscriber {});
 
-        some_event -= rc_some_sub;
+        some_event -= &rc_some_sub;
     }
 
     #[test]
