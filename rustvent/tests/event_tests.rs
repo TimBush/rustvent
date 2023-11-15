@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod event_tests {
     use std::rc::Rc;
-    use rustvent::Event;
+    use rustvent::events::{Event, EventConfig, Notify};
     use rustvent::subscriber::Subscriber;
     use rustvent_macros::Event;
 
@@ -35,10 +35,11 @@ mod event_tests {
         logic.process_completed.subscribe(rc_sub.clone());
         logic.on_process_completed();
 
+        assert_eq!(1, logic.process_completed.times_subscribers_notified);
     }
 
     #[test]
-    fn iterate_over_type_subscribers_manually() {
+    fn multiple_calls_to_event_is_not_valid_if_using_event_defaults() {
         struct BusinessSubscriber {}
         impl Subscriber for BusinessSubscriber {
             fn update(&self) {
@@ -52,10 +53,66 @@ mod event_tests {
         let rc_sub = Rc::new(subscriber);
 
         logic.process_completed.subscribe(rc_sub.clone());
-        for sub in logic.process_completed.subscribers.iter() {
-            sub.update();
-        }
+        logic.on_process_completed();
+        logic.on_process_completed();
+
+        assert_eq!(1, logic.process_completed.times_subscribers_notified);
+    }
+
+    #[test]
+    fn closure_can_subscribe_to_an_event() {
+        let config = EventConfig { 
+            subscribers_to_notify: Notify::OnlyFuncSubscribers, 
+            delete_subscribers_after_notification: true 
+        };
+
+        let mut logic = ProcessBusinessLogic {
+            process_completed: Event::new(config),
+            process_error: Event::default()
+        };
+
+        logic.process_completed.subscribe_as_fn(|| println!("Closure: run some logic..."));
+        logic.process_completed.notify();
         
+        assert_eq!(1, logic.process_completed.times_func_subscribers_notified);
+    }
+
+    #[test]
+    fn closure_is_only_notified_one_time() {
+        let config = EventConfig { 
+            subscribers_to_notify: Notify::OnlyFuncSubscribers, 
+            delete_subscribers_after_notification: true 
+        };
+
+        let mut logic = ProcessBusinessLogic {
+            process_completed: Event::new(config),
+            process_error: Event::default()
+        };
+
+        logic.process_completed.subscribe_as_fn(|| println!("Closure: run some logic..."));
+        logic.process_completed.notify();
+        logic.process_completed.notify();
+        
+        assert_eq!(1, logic.process_completed.times_func_subscribers_notified);
+    }
+
+    #[test]
+    fn closure_is_notified_twice() {
+        let config = EventConfig { 
+            subscribers_to_notify: Notify::OnlyFuncSubscribers, 
+            delete_subscribers_after_notification: false 
+        };
+
+        let mut logic = ProcessBusinessLogic {
+            process_completed: Event::new(config),
+            process_error: Event::default()
+        };
+
+        logic.process_completed.subscribe_as_fn(|| println!("Closure: run some logic..."));
+        logic.process_completed.notify();
+        logic.process_completed.notify();
+        
+        assert_eq!(2, logic.process_completed.times_func_subscribers_notified);
     }
 
 }
