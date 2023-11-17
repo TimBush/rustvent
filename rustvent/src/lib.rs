@@ -1,6 +1,7 @@
 //! A crate that implements the observer pattern.
 
 pub mod subscriber;
+pub mod event_async;
 use std::{ops::{AddAssign, SubAssign}, rc::Rc, ptr};
 use subscriber::Subscriber;
 
