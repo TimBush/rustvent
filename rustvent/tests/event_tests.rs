@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod event_tests {
     use std::rc::Rc;
-    use rustvent::events::{Event, EventConfig, Notify};
+    use rustvent::events::{Event, EventConfig, Notify, Clear};
     use rustvent::subscriber::Subscriber;
     use rustvent_macros::Event;
 
@@ -62,8 +62,8 @@ mod event_tests {
     #[test]
     fn closure_can_subscribe_to_an_event() {
         let config = EventConfig { 
-            subscribers_to_notify: Notify::OnlyFuncSubscribers, 
-            delete_subscribers_after_notification: true 
+            subscribers_to_notify: Notify::OnlyFnSubscribers, 
+            clear_subscribers_after_notification: Clear::All 
         };
 
         let mut logic = ProcessBusinessLogic {
@@ -80,8 +80,8 @@ mod event_tests {
     #[test]
     fn closure_is_only_notified_one_time() {
         let config = EventConfig { 
-            subscribers_to_notify: Notify::OnlyFuncSubscribers, 
-            delete_subscribers_after_notification: true 
+            subscribers_to_notify: Notify::OnlyFnSubscribers, 
+            clear_subscribers_after_notification: Clear::All 
         };
 
         let mut logic = ProcessBusinessLogic {
@@ -99,8 +99,8 @@ mod event_tests {
     #[test]
     fn closure_is_notified_twice() {
         let config = EventConfig { 
-            subscribers_to_notify: Notify::OnlyFuncSubscribers, 
-            delete_subscribers_after_notification: false 
+            subscribers_to_notify: Notify::OnlyFnSubscribers, 
+            clear_subscribers_after_notification: Clear::None 
         };
 
         let mut logic = ProcessBusinessLogic {
