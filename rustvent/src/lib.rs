@@ -16,14 +16,14 @@ pub mod events {
         pub times_subscribers_notified: u32,
         pub times_func_subscribers_notified: u32,
         subscribers: Vec<Rc<dyn Subscriber>>,
-        func_subscribers: Vec<Box<dyn Fn() -> ()>>,
+        fn_subscribers: Vec<Box<dyn Fn() -> ()>>,
         config: EventConfig,
     }
 
     /// Provides values to configure individual [Events](Event). 
     pub struct EventConfig {
         pub subscribers_to_notify: Notify,
-        pub delete_subscribers_after_notification: bool
+        pub clear_subscribers_after_notification: Clear
     }
 
     /// When used in conjunction with [EventConfig], this allows for configuring
@@ -34,7 +34,14 @@ pub mod events {
         /// Only implementors of the [Subscriber] Trait.
         OnlySubscribers,
         /// Only closures.
-        OnlyFuncSubscribers
+        OnlyFnSubscribers
+    }
+
+    pub enum Clear {
+        All,
+        OnlySubscribers,
+        OnlyFuncSubscribers,
+        None
     }
 
     impl Event {
@@ -43,7 +50,7 @@ pub mod events {
         pub fn new(config: EventConfig) -> Event {
             Event { 
                 subscribers: Default::default(), 
-                func_subscribers: Default::default(), 
+                fn_subscribers: Default::default(), 
                 times_subscribers_notified: Default::default(), 
                 times_func_subscribers_notified: Default::default(), 
                 config 
@@ -80,7 +87,7 @@ pub mod events {
         /// ```
         pub fn subscribe_as_fn<F>(&mut self, func: F) where F: Fn() -> () + 'static {
             let box_func = Box::new(func);
-            self.func_subscribers.push(box_func);
+            self.fn_subscribers.push(box_func);
         }
 
         /// Unsubscribe a [Subscriber] from this event.
@@ -101,7 +108,7 @@ pub mod events {
 
         /// Get all closures listening to this event.
         pub fn get_func_subscribers(&self) -> &Vec<Box<dyn Fn() -> ()>> {
-            &self.func_subscribers
+            &self.fn_subscribers
         }
 
         /// Notifies subscribers.  Which subscribers are notified is determined by the configuration values
@@ -146,12 +153,10 @@ pub mod events {
                     self.notify_fn_subscribers();
                 },
                 Notify::OnlySubscribers => self.notify_subscribers(),
-                Notify::OnlyFuncSubscribers => self.notify_fn_subscribers(),
+                Notify::OnlyFnSubscribers => self.notify_fn_subscribers(),
             }
 
-            if self.config.delete_subscribers_after_notification {
-                self.delete_all_subscribers();
-            }
+            self.try_clear();
         }
 
         fn notify_subscribers(&mut self) {
@@ -164,17 +169,34 @@ pub mod events {
         }
 
         fn notify_fn_subscribers(&mut self) {
-            if self.func_subscribers.is_empty() { return; }
+            if self.fn_subscribers.is_empty() { return; }
 
-            for func in self.func_subscribers.iter() {
+            for func in self.fn_subscribers.iter() {
                 func();
             }
             self.times_func_subscribers_notified += 1;
         }
+
+        fn try_clear(&mut self) {
+            match self.config.clear_subscribers_after_notification {
+                Clear::All => self.clear_all_subscribers(),
+                Clear::OnlySubscribers => self.clear_subscribers(),
+                Clear::OnlyFuncSubscribers => self.clear_fn_subscribers(),
+                Clear::None => return,
+            }
+        }
         
-        fn delete_all_subscribers(&mut self) {
+        fn clear_all_subscribers(&mut self) {
+            self.clear_subscribers();
+            self.clear_fn_subscribers();
+        }
+    
+        fn clear_subscribers(&mut self) {
             self.subscribers.clear();
-            self.func_subscribers.clear();
+        }
+        
+        fn clear_fn_subscribers(&mut self) {
+            self.fn_subscribers.clear();
         }
     }
 
@@ -199,7 +221,7 @@ pub mod events {
         fn default() -> Self {
             Self { 
                 subscribers_to_notify: Notify::All, 
-                delete_subscribers_after_notification: true 
+                clear_subscribers_after_notification: Clear::All 
             }
         }
     }
