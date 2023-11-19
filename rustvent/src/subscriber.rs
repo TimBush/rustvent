@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::{Arc, Mutex}, ops::{DerefMut, Deref}};
 
 pub trait Subscriber {
    fn update(&self);
