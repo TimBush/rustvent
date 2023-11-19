@@ -1,6 +1,6 @@
-use std::{sync::Arc, thread::{self, JoinHandle}, ops::{AddAssign, SubAssign}};
+use std::{sync::{Arc, Mutex}, thread::{self, JoinHandle}, ops::{AddAssign, SubAssign}};
 
-use crate::{subscriber::SubscriberAsync, events::{EventConfig, Notify, Clear}};
+use crate::{subscriber::{SubscriberAsync, Subscriber}, events::{EventConfig, Notify, Clear}};
 
 macro_rules! default {
     () => {
@@ -13,7 +13,7 @@ pub struct EventAsync {
     pub times_subscribers_notified: u32,
     pub times_func_subscribers_notified: u32,
     subscribers: Vec<Arc<(dyn SubscriberAsync + Send + Sync)>>,
-    fn_subscribers: Vec<Arc<dyn Fn() -> () + Send + Sync>>,
+    fn_subscribers: Vec<Arc<dyn Fn() + Send + Sync>>,
     config: EventConfig
 }
 
@@ -33,7 +33,7 @@ impl EventAsync {
         &self.subscribers
     }
 
-    pub fn get_fn_subscribers(&self) -> &Vec<Arc<dyn Fn() -> () + Send + Sync>> {
+    pub fn get_fn_subscribers(&self) -> &Vec<Arc<dyn Fn() + Send + Sync>> {
         &self.fn_subscribers
     }
 
@@ -41,7 +41,7 @@ impl EventAsync {
         self.subscribers.push(subscriber);
     }
 
-    pub fn subscribe_as_fn<F>(&mut self, subscriber: F) where F: Fn() -> () + Send + Sync + 'static {
+    pub fn subscribe_as_fn<F>(&mut self, subscriber: F) where F: Fn() + Send + Sync + 'static {
         self.fn_subscribers.push(Arc::new(subscriber));
     }
 
