@@ -1,4 +1,4 @@
-use std::{sync::{Arc, Mutex}, thread::{self, JoinHandle, ScopedJoinHandle}, ops::{AddAssign, SubAssign, DerefMut}};
+use std::{sync::{Arc, Mutex}, thread::{self, JoinHandle, ScopedJoinHandle}, ops::{AddAssign, SubAssign}};
 
 use crate::{subscriber::{SubscriberAsync, SubscriberAsyncMut}, events::{EventConfig, Notify, Clear}};
 
