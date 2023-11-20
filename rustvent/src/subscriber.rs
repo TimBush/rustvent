@@ -1,4 +1,4 @@
-use std::{sync::{Arc, Mutex}, ops::{DerefMut, Deref}};
+use std::{sync::{Arc, Mutex}, ops::DerefMut};
 
 pub trait Subscriber {
    fn update(&self);
@@ -12,4 +12,12 @@ pub trait SubscriberAsync {
    Self: SubscriberAsync + Sized + Send + Sync + 'static {
       Arc::new(self)
    }
+}
+
+pub trait SubscriberAsyncMutReturn<TReturn> {
+   fn update_mut(&mut self) -> TReturn;
+}
+
+pub trait SubscriberAsyncMut {
+   fn update_mut(&mut self);
 }

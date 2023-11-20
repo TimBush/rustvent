@@ -1,6 +1,6 @@
-use std::{sync::{Arc, Mutex}, thread::{self, JoinHandle}, ops::{AddAssign, SubAssign}};
+use std::{sync::{Arc, Mutex}, thread::{self, JoinHandle, ScopedJoinHandle}, ops::{AddAssign, SubAssign, DerefMut}};
 
-use crate::{subscriber::{SubscriberAsync, Subscriber}, events::{EventConfig, Notify, Clear}};
+use crate::{subscriber::{SubscriberAsync, SubscriberAsyncMut}, events::{EventConfig, Notify, Clear}};
 
 macro_rules! default {
     () => {
@@ -12,7 +12,9 @@ macro_rules! default {
 pub struct EventAsync {
     pub times_subscribers_notified: u32,
     pub times_func_subscribers_notified: u32,
+    pub times_subscribers_mut_notified: u32,
     subscribers: Vec<Arc<(dyn SubscriberAsync + Send + Sync)>>,
+    subscribers_mut: Vec<Arc<Mutex<(dyn SubscriberAsyncMut + Send + Sync)>>>,
     fn_subscribers: Vec<Arc<dyn Fn() + Send + Sync>>,
     config: EventConfig
 }
@@ -22,9 +24,11 @@ impl EventAsync {
         EventAsync 
         { 
             subscribers: default!(), 
+            subscribers_mut: default!(),
             fn_subscribers: default!(),
             times_subscribers_notified: default!(), 
             times_func_subscribers_notified: default!(),
+            times_subscribers_mut_notified: default!(),
             config
         }
     }
@@ -39,6 +43,10 @@ impl EventAsync {
 
     pub fn subscribe(&mut self, subscriber: Arc<(dyn SubscriberAsync + Send + Sync)>) {
         self.subscribers.push(subscriber);
+    }
+
+    pub fn subscribe_mut(&mut self, subscriber: Arc<Mutex<(dyn SubscriberAsyncMut + Send + Sync)>>) {
+        self.subscribers_mut.push(subscriber);
     }
 
     pub fn subscribe_as_fn<F>(&mut self, subscriber: F) where F: Fn() + Send + Sync + 'static {
@@ -101,6 +109,29 @@ impl EventAsync {
         self.times_func_subscribers_notified += 1;
 
         handles.into_iter().for_each(|h| h.join().unwrap())
+    }
+    
+    pub fn notify_subscribers_mut(&mut self) {
+
+        thread::scope(|s| {
+            let mut handles: Vec<ScopedJoinHandle<()>> = Vec::new();
+
+            for sub in self.subscribers_mut.iter() {
+                let sub_clone = sub.clone();
+
+                let handle = s.spawn(move || {
+                    let mut val = sub_clone.lock().unwrap();
+                    val.update_mut();
+                });
+
+                handles.push(handle);
+            }
+
+            self.times_subscribers_mut_notified += 1;
+
+            handles.into_iter().for_each(|h| h.join().unwrap())
+        });        
+
     }
 
     fn try_clear(&mut self) {
