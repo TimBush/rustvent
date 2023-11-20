@@ -107,7 +107,7 @@ pub mod events {
         }
 
         /// Get all closures listening to this event.
-        pub fn get_func_subscribers(&self) -> &Vec<Box<dyn Fn() -> ()>> {
+        pub fn get_fn_subscribers(&self) -> &Vec<Box<dyn Fn() -> ()>> {
             &self.fn_subscribers
         }
 
@@ -305,11 +305,11 @@ mod tests {
         let mut some_event = Event::default();
         some_event.subscribe_as_fn(|| println!("Closure: run some logic..."));
 
-        assert_eq!(some_event.get_func_subscribers().len(), 1);
+        assert_eq!(some_event.get_fn_subscribers().len(), 1);
     }
 
     #[test]
-    fn event_notify_func_subscribers_works() {
+    fn event_notify_fn_subscribers_works() {
         let mut some_event = Event::default();
         some_event.subscribe_as_fn(|| println!("Closure: run some logic..."));
         some_event.notify();

@@ -32,8 +32,39 @@ mod event_tests {
 
         let rc_sub = Rc::new(subscriber);
 
-        logic.process_completed.subscribe(rc_sub.clone());
+        logic.process_completed += rc_sub.clone();
         logic.on_process_completed();
+
+        assert_eq!(1, logic.process_completed.times_subscribers_notified);
+    }
+
+    #[test]
+    fn type_can_call_method_on_self_when_notified() {
+        #[derive(Event, Default)]
+        struct Logic {
+            process_completed: Event,
+        }
+
+        impl Logic {
+            fn notify_subscribers(&mut self) {
+                self.on_process_completed();
+            }
+        }
+
+        struct BusinessSubscriber {}
+        impl Subscriber for BusinessSubscriber {
+            fn update(&self) {
+                println!("Run some logic...");
+            }
+        }
+
+        let subscriber = BusinessSubscriber {};
+        let mut logic = Logic::default();
+
+        let rc_sub = Rc::new(subscriber);
+
+        logic.process_completed += rc_sub.clone();
+        logic.notify_subscribers();
 
         assert_eq!(1, logic.process_completed.times_subscribers_notified);
     }
