@@ -53,11 +53,20 @@ impl EventAsync {
         self.fn_subscribers.push(Arc::new(subscriber));
     }
 
-    pub fn unsubscribe(&mut self, rhs: Arc<(dyn SubscriberAsync + Send + Sync)>) {
+    pub fn unsubscribe(&mut self, subscriber: Arc<(dyn SubscriberAsync + Send + Sync)>) {
         let index = self.subscribers
         .iter()
-        .position(|sub| Arc::ptr_eq(&rhs, sub))
-        .expect("The provided 'rhs' argument could not be found in the list of subscribers.");
+        .position(|sub| Arc::ptr_eq(&subscriber, sub))
+        .expect("The provided 'subscriber' argument could not be found in the list of subscribers.");
+        
+        self.subscribers.swap_remove(index);
+    }
+
+    pub fn unsubscribe_mut(&mut self, subscriber: Arc<Mutex<(dyn SubscriberAsyncMut + Send + Sync)>>) {
+        let index = self.subscribers_mut
+        .iter()
+        .position(|sub| Arc::ptr_eq(&subscriber, sub))
+        .expect("The provided 'subscriber' argument could not be found in the list of subscribers.");
         
         self.subscribers.swap_remove(index);
     }
@@ -70,6 +79,7 @@ impl EventAsync {
             },
             Notify::OnlySubscribers => self.notify_subscribers(),
             Notify::OnlyFnSubscribers => self.notify_fn_subscribers(),
+            _ => ()
         }
 
         self.try_clear();
@@ -140,6 +150,7 @@ impl EventAsync {
             Clear::OnlySubscribers => self.clear_subscribers(),
             Clear::OnlyFuncSubscribers => self.clear_fn_subscribers(),
             Clear::None => return,
+            _ => ()
         }
     }
 

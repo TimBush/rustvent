@@ -4,6 +4,10 @@ pub trait Subscriber {
    fn update(&self);
 }
 
+pub trait SubscriberMut {
+   fn update_mut(&mut self);
+}
+
 pub trait SubscriberAsync {
    fn update(&self);
 
