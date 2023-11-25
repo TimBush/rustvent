@@ -32,7 +32,7 @@ mod event_tests {
 
         let rc_sub = Rc::new(subscriber);
 
-        logic.process_completed += rc_sub.clone();
+        logic.process_completed.subscribe(rc_sub.clone());
         logic.on_process_completed();
 
         assert_eq!(1, logic.process_completed.times_subscribers_notified);
@@ -63,7 +63,7 @@ mod event_tests {
 
         let rc_sub = Rc::new(subscriber);
 
-        logic.process_completed += rc_sub.clone();
+        logic.process_completed.subscribe(rc_sub.clone());
         logic.notify_subscribers();
 
         assert_eq!(1, logic.process_completed.times_subscribers_notified);

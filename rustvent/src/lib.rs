@@ -264,23 +264,6 @@ pub mod events {
         }
     }
 
-    impl AddAssign<Rc<dyn Subscriber>> for Event {
-        fn add_assign(&mut self, rhs: Rc<dyn Subscriber>) {
-            self.subscribe(rhs);
-        }
-    }
-    
-    impl SubAssign<&Rc<dyn Subscriber>> for Event {
-        fn sub_assign(&mut self, rhs: &Rc<dyn Subscriber>) {
-            let index = self.subscribers
-            .iter()
-            .position(|subscriber| ptr::eq(Rc::as_ptr(subscriber), Rc::as_ptr(rhs)))
-            .expect("The provided 'subscriber' argument could not be found in the list of subscribers.");
-            
-            self.subscribers.swap_remove(index);
-        }
-    }
-
     impl Default for EventConfig {
         fn default() -> Self {
             Self { 
